@@ -1,0 +1,119 @@
+# 🤖 Mi Primer Agente de IA - Guía Completa
+
+## Comando
+.\venv\Scripts\python.exe agent.py
+
+## ¿Qué es un Agente de IA?
+
+Un **agente de IA** es un programa que usa un LLM (Large Language Model) para **razonar** y **actuar** de forma autónoma. A diferencia de un simple chatbot:
+
+| Chatbot | Agente |
+|---------|--------|
+| Recibe pregunta → Responde | Recibe pregunta → **Piensa** → **Usa herramientas** → Responde |
+| Solo usa lo que "sabe" | Puede **buscar información**, ejecutar código, llamar APIs |
+| Una sola interacción con el LLM | **Múltiples interacciones** en un loop |
+
+## Arquitectura del Proyecto
+
+```
+first-agent/
+├── agent.py           # 🧠 Cerebro - Loop ReAct y lógica principal
+├── tools.py           # 🔧 Herramientas - Búsqueda web y noticias
+├── requirements.txt   # 📦 Dependencias
+├── .env               # 🔑 Tu API key (NO compartir)
+├── .env.example       # 📋 Template del .env
+└── .gitignore         # 🛡️ Proteger archivos sensibles
+```
+
+## Cómo Funciona - El Loop ReAct
+
+```mermaid
+flowchart TD
+    A[👤 Usuario hace pregunta] --> B[🧠 LLM analiza la pregunta]
+    B --> C{¿Necesita buscar?}
+    C -->|No| D[💬 Responde directamente]
+    C -->|Sí| E[🔧 Pide usar herramienta]
+    E --> F[⚡ Se ejecuta la búsqueda]
+    F --> G[📊 Resultados van al LLM]
+    G --> B
+    D --> H[📝 Se guarda en historial]
+    H --> A
+```
+
+## Conceptos Clave
+
+### 1. Tool Calling (Llamada a Herramientas)
+El LLM no puede "hacer cosas" por sí solo. Nosotros le **definimos herramientas** (funciones) que puede pedir que ejecutemos. El LLM decide **cuándo** y **con qué parámetros** usarlas.
+
+### 2. System Prompt
+Es la "personalidad" del agente. Define **quién es**, **qué puede hacer** y **cómo debe comportarse**. Se envía al inicio de cada conversación.
+
+### 3. Historial (Memoria)
+El agente mantiene un historial de toda la conversación. Esto le permite:
+- Recordar contexto previo
+- Hacer preguntas de seguimiento
+- No repetir búsquedas innecesarias
+
+### 4. Stop Reason
+Cuando el LLM responde, indica **por qué paró**:
+- `end_turn`: Ya terminó de responder → salimos del loop
+- `tool_use`: Quiere usar una herramienta → seguimos en el loop
+
+## Setup Paso a Paso
+
+### 1. Obtener API Key
+1. Ve a [console.anthropic.com](https://console.anthropic.com/)
+2. Crea una cuenta → obtienes **$5 USD** en créditos gratis
+3. Ve a **API Keys** → **Create Key**
+4. Copia la key
+
+### 2. Configurar el proyecto
+```bash
+# Copiar template de variables de entorno
+copy .env.example .env
+
+# Editar .env y pegar tu API key
+# ANTHROPIC_API_KEY=sk-ant-tu-key-real-aqui
+```
+
+### 3. Instalar dependencias
+```bash
+# Crear entorno virtual
+python -m venv venv
+venv\Scripts\activate
+
+# Instalar paquetes
+pip install -r requirements.txt
+```
+
+### 4. Ejecutar el agente
+```bash
+python agent.py
+```
+
+## Ejemplos de Uso
+
+Una vez corriendo, puedes preguntarle cosas como:
+
+- *"¿Cuáles son las últimas noticias de tecnología?"*
+- *"¿Qué es Kubernetes y para qué se usa?"*
+- *"Busca información sobre los mejores frameworks de Python para 2026"*
+- *"¿Cuál es el precio actual de Bitcoin?"*
+
+## Próximos Pasos (Mejoras Posibles)
+
+> [!TIP]
+> Estas son ideas para cuando quieras llevar tu agente al siguiente nivel:
+
+1. **Agregar más herramientas**: calculadora, leer archivos, llamar APIs
+2. **Memoria persistente**: guardar conversaciones en archivo/base de datos
+3. **RAG**: conectar documentos propios para que el agente busque en ellos
+4. **Multi-agente**: varios agentes especializados que colaboran
+5. **Interfaz web**: usar Streamlit o Gradio para una UI bonita
+6. **Modelos locales**: usar Ollama para correr modelos sin costo
+
+## Archivos del Proyecto
+
+- [agent.py](file:///c:/Users/josma/OneDrive/Escritorio/first-agent/agent.py) - Lógica principal del agente
+- [tools.py](file:///c:/Users/josma/OneDrive/Escritorio/first-agent/tools.py) - Definición de herramientas
+- [requirements.txt](file:///c:/Users/josma/OneDrive/Escritorio/first-agent/requirements.txt) - Dependencias
