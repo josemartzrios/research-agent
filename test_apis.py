@@ -1,5 +1,5 @@
 """
-🧪 test_apis.py - Verifica que las APIs de INEGI y Banxico funcionen correctamente
+🧪 test_apis.py - Verifica que las APIs de World Bank y Banxico funcionen correctamente
 
 Ejecutar con:
     .\\venv\\Scripts\\python.exe test_apis.py
@@ -16,56 +16,41 @@ load_dotenv()
 console = Console()
 
 
-def test_inegi():
-    """Prueba la conexión con la API del INEGI."""
-    console.print("\n[bold cyan]── Prueba INEGI ──────────────────────────────[/]")
-    token = os.getenv("INEGI_TOKEN")
-
-    if not token or token == "tu-token-inegi-aqui":
-        console.print("  [yellow]⚠ INEGI_TOKEN no configurado en .env[/]")
-        console.print("  [dim]→ Regístrate en: https://www.inegi.org.mx/servicios/api_biinegi.html[/]")
-        return False
-
-    # Probar con tasa de desocupación (serie 444612)
-    serie_id = "444612"
-    url = (
-        f"https://www.inegi.org.mx/app/api/indicadores/desarrolladores/jsonxml/"
-        f"INDICATOR/{serie_id}/es/0910/false/BIE/2.0/{token}?type=json"
-    )
+def test_world_bank():
+    """Prueba la conexión con la API del Banco Mundial."""
+    console.print("\n[bold cyan]── Prueba World Bank ─────────────────────────[/]")
+    
+    # Probar con Tasa de Desempleo (SL.UEM.TOTL.ZS)
+    codigo = "SL.UEM.TOTL.ZS"
+    url = f"https://api.worldbank.org/v2/country/MX/indicator/{codigo}?format=json&mrv=1"
 
     try:
-        console.print(f"  [dim]Conectando a INEGI... (serie {serie_id})[/]")
+        console.print(f"  [dim]Conectando a World Bank API... ({codigo})[/]")
         resp = requests.get(url, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 
-        serie = data.get("Series", [{}])[0]
-        nombre = serie.get("INDICADOR", "?")
-        unidad = serie.get("UNIDAD", "?")
-        obs = serie.get("OBSERVATIONS", [])
-        ultimo = obs[-1] if obs else {}
+        if len(data) > 1 and data[1]:
+            ultimo = data[1][0]
+            nombre = ultimo.get("indicator", {}).get("value", "?")
+            anio = ultimo.get("date", "?")
+            valor = str(round(ultimo.get("value", 0), 2)) + "%" if ultimo.get("value") else "Sin dato"
 
-        console.print(f"  [green]✅ INEGI conectado correctamente[/]")
+            console.print(f"  [green]✅ World Bank conectado correctamente[/]")
 
-        tabla = Table(show_header=True, header_style="bold green")
-        tabla.add_column("Indicador")
-        tabla.add_column("Unidad")
-        tabla.add_column("Último periodo")
-        tabla.add_column("Valor")
-        tabla.add_row(
-            nombre[:50],
-            unidad,
-            ultimo.get("TIME_PERIOD", "?"),
-            ultimo.get("OBS_VALUE", "?")
-        )
-        console.print(tabla)
-        return True
+            tabla = Table(show_header=True, header_style="bold green")
+            tabla.add_column("Indicador")
+            tabla.add_column("Último año")
+            tabla.add_column("Valor")
+            tabla.add_row(nombre[:50], anio, valor)
+            console.print(tabla)
+            return True
+        else:
+            console.print(f"  [red]❌ Respuesta inesperada del World Bank[/]")
+            return False
 
     except requests.HTTPError as e:
-        if e.response.status_code == 401:
-            console.print(f"  [red]❌ Token inválido (401). Verifica tu INEGI_TOKEN[/]")
-        else:
-            console.print(f"  [red]❌ Error HTTP: {e}[/]")
+        console.print(f"  [red]❌ Error HTTP: {e}[/]")
         return False
     except Exception as e:
         console.print(f"  [red]❌ Error: {str(e)}[/]")
@@ -126,21 +111,21 @@ def test_banxico():
 def main():
     console.print(Panel(
         "[bold]🧪 Test de Conexión — APIs de México[/]\n"
-        "[dim]Verifica que INEGI y Banxico respondan correctamente[/]",
+        "[dim]Verifica que World Bank y Banxico respondan correctamente[/]",
         border_style="bright_blue"
     ))
 
-    ok_inegi   = test_inegi()
+    ok_wb      = test_world_bank()
     ok_banxico = test_banxico()
 
     console.print("\n[bold]── Resumen ───────────────────────────────────[/]")
-    console.print(f"  INEGI:   {'[green]✅ OK[/]' if ok_inegi   else '[yellow]⚠ Sin token / revisar[/]'}")
-    console.print(f"  Banxico: {'[green]✅ OK[/]' if ok_banxico else '[yellow]⚠ Sin token / revisar[/]'}")
+    console.print(f"  World Bank: {'[green]✅ OK (API Abierta)[/]' if ok_wb else '[red]❌ Falla de conexión[/]'}")
+    console.print(f"  Banxico:    {'[green]✅ OK[/]' if ok_banxico else '[yellow]⚠ Sin token / revisar[/]'}")
 
-    if not ok_inegi or not ok_banxico:
+    if not ok_banxico:
         console.print(
-            "\n[dim]💡 Sin tokens: el agente igual funciona con búsqueda web,\n"
-            "   pero sin datos oficiales en tiempo real.[/]"
+            "\n[dim]💡 Sin token de Banxico: el agente usará datos del World Bank y web,\n"
+            "   pero no tendrá el tipo de cambio ni tasas al día exacto.[/]"
         )
     else:
         console.print("\n[green bold]🎉 Todo listo. Corre el agente con:[/]")
